@@ -1,0 +1,36 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+@model List<DockerManager.ViewModels.ContainerViewModel>
+
+<div class="text-center">
+
+    <h1>Docker Containers</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>State</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Image</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var containerViewModel in Model)
+            {
+                <tr>
+                    <td>@containerViewModel.Id</td>
+                    <td>@containerViewModel.Name</td>
+                    <td>@containerViewModel.State</td>
+                    <td>@containerViewModel.Status</td>
+                    <td>@containerViewModel.Created</td>
+                    <td>@containerViewModel.Image</td>
+                </tr>
+            }
+        </tbody>
+
+    </table>
+</div>

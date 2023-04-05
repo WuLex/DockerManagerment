@@ -1,0 +1,98 @@
+﻿@model IEnumerable<DockerManager.ViewModels.ContainerViewModel>
+
+@{
+    ViewData["Title"] = "Docker Monitor";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<h2>Docker Version Info</h2>
+<p>@ViewBag.Version</p>
+
+<h2>Containers</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>State</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Image</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var container in ViewBag.Containers)
+        {
+            <tr>
+                <td>@container.Id</td>
+                <td>@container.Name</td>
+                <td>@container.State</td>
+                <td>@container.Status</td>
+                <td>@container.Created</td>
+                <td>@container.Image</td>
+                <td>
+                    <form method="post" asp-action="DeleteContainer">
+                        <input type="hidden" name="containerId" value="@container.Id" />
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h2>Images</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Repository</th>
+            <th>Tag</th>
+            <th>Created</th>
+            <th>Size</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var image in ViewBag.Images)
+        {
+            <tr>
+                <td>@image.ID</td>
+          @*      <td>@image.RepoTags.FirstOrDefault()</td>
+                <td>@image.RepoTags.LastOrDefault()?.Split(":").LastOrDefault()</td>*@
+                <td>@image.Created</td>
+                <td>@image.Size</td>
+                <td>
+                    <form method="post" asp-action="DeleteImage">
+                        <input type="hidden" name="imageId" value="@image.ID" />
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h2>Create Container</h2>
+<form method="post" asp-action="CreateContainer">
+    <div class="form-group">
+        <label for="imageName">Image Name:</label>
+        <input type="text" class="form-control" id="imageName" name="imageName" />
+    </div>
+    <div class="form-group">
+        <label for="containerName">Container Name:</label>
+        <input type="text" class="form-control" id="containerName" name="containerName" />
+    </div>
+    <button type="submit" class="btn btn-primary">Create</button>
+</form>
+
+<h2>Create Image</h2>
+<form method="post" asp-action="CreateImage">
+    <div class="form-group">
+        <label for="imageName">Image Name:</label>
+        <input type="text" class="form-control" id="imageName" name="imageName" />
+    </div>
+    <button type="submit" class="btn btn-primary">Create</button>
+</form>

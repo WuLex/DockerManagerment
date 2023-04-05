@@ -1,0 +1,19 @@
+﻿@model DockerManager.ViewModels.DockerViewModel
+
+<h1>Docker Stats</h1>
+
+<p>CPU usage: @Model.ContainerStats?.CPUStats?.CPUUsage?.PercpuUsage?</p>
+<p>Memory usage: @Model.ContainerStats?.MemoryStats?.Usage</p>
+<p>Network usage: @Model.ContainerStats?.Networks?["eth0"]?</p>
+
+<h1>Docker Info</h1>
+
+<p>Server version: @Model.SystemInfo?.ServerVersion</p>
+<p>Storage driver: @Model.SystemInfo?.Driver</p>
+<p>Containers: @Model.SystemInfo?.Containers</p>
+
+<h1>Docker Version</h1>
+
+<p>Client version: @Model.Version?.Version</p>
+<p>Server version: @Model.Version?.GoVersion</p>
+<p>API version: @Model.Version?.APIVersion</p>

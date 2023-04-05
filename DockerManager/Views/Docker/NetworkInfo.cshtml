@@ -1,0 +1,46 @@
+﻿@model DockerManager.ViewModels.DockerNetworkViewModel
+
+<h1>Docker Networks</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Driver</th>
+            <th>Scope</th>
+            <th>Created</th>
+            <th>Containers</th>
+            <th>Services</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var network in Model.Networks)
+        {
+            <tr>
+                <td>@network.Name</td>
+                <td>@network.Driver</td>
+                <td>@network.Scope</td>
+                <td>@network.Created</td>
+                <th>
+                    <select>
+                        @foreach (var container in network.Containers)
+                        {
+                            <option value="@container.Value">@container.Key</option>
+                        }
+                    </select></th>
+
+                <th>
+                    <select>
+                        @if (network.Services!=null)
+                        {
+                            @foreach (var service in network.Services)
+                            {
+                                <option value="@service.Value">@service.Key</option>
+                            }
+                        }
+                    </select>
+                </th>
+            </tr>
+        }
+    </tbody>
+</table>
