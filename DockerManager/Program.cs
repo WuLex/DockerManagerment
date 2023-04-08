@@ -7,7 +7,7 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddSingleton<IDockerClient>(
     //new DockerClientConfiguration(new Uri("unix:///var/run/docker.sock")).CreateClient()
-    new DockerClientConfiguration(new Uri("http://192.168.0.102:2375/")).CreateClient()
+    new DockerClientConfiguration(new Uri("http://192.168.1.103:2375/")).CreateClient()
     );
 
 //var dockerClient = new DockerClientConfiguration().CreateClient();

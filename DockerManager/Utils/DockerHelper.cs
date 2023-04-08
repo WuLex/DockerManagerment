@@ -11,13 +11,13 @@ namespace DockerManager.Utils
     public static class DockerHelper
     {
 
-        public static readonly DockerClient myClient = new DockerClientConfiguration(new Uri("http://192.168.0.102:2375/")).CreateClient();
+        public static readonly DockerClient myClient = new DockerClientConfiguration(new Uri("http://192.168.1.103:2375/")).CreateClient();
 
 
         #region 方式一
         public static async Task<ContainerStatsResponse> GetContainerStats(string containerId)
         {
-            using (var client = new DockerClientConfiguration(new Uri("http://192.168.0.102:2375/")).CreateClient())
+            using (var client = new DockerClientConfiguration(new Uri("http://192.168.1.103:2375/")).CreateClient())
             {
                 var parameters = new ContainerStatsParameters { Stream = false };
                 var progress = new ContainerStatsProgress();
@@ -79,7 +79,7 @@ namespace DockerManager.Utils
         {
             //var config = new DockerClientConfiguration(new Uri("npipe://./pipe/docker_engine"));
             //var config = new DockerClientConfiguration(new Uri("unix:///var/run/docker.sock")); 
-            var config = new DockerClientConfiguration(new Uri("http://192.168.0.102:2375/")); 
+            var config = new DockerClientConfiguration(new Uri("http://192.168.1.103:2375/")); 
             using var client = config.CreateClient();
             var networks = (await client.Networks.ListNetworksAsync(new NetworksListParameters())).ToList();
             return  networks;

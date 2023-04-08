@@ -1,0 +1,14 @@
+# 基于Redis官方镜像构建Docker镜像
+FROM redis:latest
+
+# 复制Redis配置文件
+COPY redis.conf /usr/local/etc/redis/redis.conf
+
+# 设置工作目录
+WORKDIR /usr/local/etc/redis
+
+# 暴露Redis端口
+EXPOSE 6379
+
+# 启动Redis服务器
+CMD [ "redis-server", "/usr/local/etc/redis/redis.conf" ]

@@ -79,20 +79,50 @@ namespace DockerManager.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateImage(string imageName)
         {
-            var tarPath = System.IO.Directory.GetCurrentDirectory() + "Dockerfile";
+            var tarPath = System.IO.Directory.GetCurrentDirectory() + $"/Dockerfiles/{imageName}Dockerfile";
             using (var stream = new FileStream(tarPath, FileMode.Open))
             {
                 //var task = client.Images.BuildImageFromDockerfileAsync(stream, new ImageBuildParameters() { Dockerfile = serviceDockerfile[service], Tags = new string[] { serviceImage[service] } });
                 //task.Wait();
                 await _dockerClient.Images.BuildImageFromDockerfileAsync(stream, new ImageBuildParameters
                 {
-                    //Dockerfile = "Dockerfile",
+                    Dockerfile = "Dockerfile",
                     Tags = new List<string> { imageName }
                 });
             }
 
             return RedirectToAction("Index");
         }
+
+
+        //[HttpPost]
+        //public async Task<IActionResult> CreateImage(string imageName)
+        //{
+        //    var tarPath = System.IO.Directory.GetCurrentDirectory() + $"/Dockerfiles/{imageName}Dockerfile";
+        //    using (var stream = new FileStream(tarPath, FileMode.Open))
+        //    {
+        //        var authConfig = new AuthConfig
+        //        {
+        //            Username = "your-registry-username",
+        //            Password = "your-registry-password"
+        //        };
+        //        var imageBuildParameters = new ImageBuildParameters
+        //        {
+        //            Dockerfile = "Dockerfile",
+        //            Tags = new List<string> { imageName }
+        //        };
+        //        var headers = new Dictionary<string, string>
+        //{
+        //    { "Cache-Control", "no-cache" }
+        //};
+        //        var progress = new Progress<JSONMessage>();
+        //        var cancellationToken = CancellationToken.None;
+
+        //        await _dockerClient.Images.BuildImageFromDockerfileAsync(stream, imageBuildParameters, authConfig, headers, progress, cancellationToken);
+        //    }
+
+        //    return RedirectToAction("Index");
+        //}
 
         [HttpPost]
         public async Task<IActionResult> DeleteImage(string imageId)
