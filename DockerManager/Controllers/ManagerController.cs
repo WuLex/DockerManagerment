@@ -48,7 +48,7 @@ namespace DockerManager.Controllers
             #endregion 镜像
 
             ViewBag.Containers = containers;
-            ViewBag.Images= images;
+            ViewBag.Images = images;
 
             var version = await _dockerClient.System.GetVersionAsync();
             ViewBag.Version = version.Version;
@@ -68,6 +68,52 @@ namespace DockerManager.Controllers
             return RedirectToAction("Index");
         }
 
+        public async Task<IActionResult> CreateRedisContainer()   //public async Task<string> CreateRedisContainer()
+        {
+            var dockerClient = new DockerClientConfiguration().CreateClient();
+
+            var containerConfig = new Config
+            {
+                Image = "redis:latest",
+                ExposedPorts = new Dictionary<string, EmptyStruct>
+                                {
+                                    { "6379/tcp", default }
+                                }
+            };
+
+            var hostConfig = new HostConfig
+            {
+                PortBindings = new Dictionary<string, IList<PortBinding>>
+                                {
+                                    {
+                                        "6379/tcp", new List<PortBinding>
+                                        {
+                                            new PortBinding
+                                            {
+                                                HostPort = "6379"
+                                            }
+                                        }
+                                    }
+                                }
+            };
+
+            var containerCreateParameters = new CreateContainerParameters(containerConfig)
+            {
+                Name = "my-redis-container",
+                //Config = containerConfig,
+                HostConfig = hostConfig
+            };
+
+            var createdContainer = await dockerClient.Containers.CreateContainerAsync(containerCreateParameters);
+            var containerId = createdContainer.ID;
+            //启动容器
+            await dockerClient.Containers.StartContainerAsync(containerId, null);
+
+            //return containerId;
+
+            return RedirectToAction("Index");
+        }
+
         [HttpPost]
         public async Task<IActionResult> DeleteContainer(string containerId)
         {
@@ -79,21 +125,48 @@ namespace DockerManager.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateImage(string imageName)
         {
-            var tarPath = System.IO.Directory.GetCurrentDirectory() + $"/Dockerfiles/{imageName}Dockerfile";
-            using (var stream = new FileStream(tarPath, FileMode.Open))
+            //var tarPath = System.IO.Directory.GetCurrentDirectory() + $"/Dockerfiles/{imageName}Dockerfile";
+            //using (var stream = new FileStream(tarPath, FileMode.Open))
+            //{
+            //    //var task = client.Images.BuildImageFromDockerfileAsync(stream, new ImageBuildParameters() { Dockerfile = serviceDockerfile[service], Tags = new string[] { serviceImage[service] } });
+            //    //task.Wait();
+            //    await _dockerClient.Images.BuildImageFromDockerfileAsync(stream, new ImageBuildParameters
+            //    {
+            //        Dockerfile = "Dockerfile",
+            //        Tags = new List<string> { imageName }
+            //    });
+            //}
+
+            #region 设置 AuthConfig 参数
+
+            //但是，如果您使用私有注册表，则需要使用适当的身份验证凭据设置 AuthConfig 参数。 否则，您可能会在尝试将镜像拉取或推送到注册表时遇到身份验证错误。
+            //总之，如果您使用的是公共 Docker Hub 注册表，则无需设置 AuthConfig 参数。 但是，如果您使用私有注册表，则有必要使用 AuthConfig 参数提供身份验证凭据。
+            //var authConfig = new AuthConfig
+            //{
+            //    Username = "your_username",
+            //    Password = "your_password"
+            //};
+
+            //await dockerClient.Images.CreateImageAsync(imageCreateParameters, authConfig, new Progress<JSONMessage>());
+
+            #endregion 设置 AuthConfig 参数
+
+            var imageCreateParameters = new ImagesCreateParameters
             {
-                //var task = client.Images.BuildImageFromDockerfileAsync(stream, new ImageBuildParameters() { Dockerfile = serviceDockerfile[service], Tags = new string[] { serviceImage[service] } });
-                //task.Wait();
-                await _dockerClient.Images.BuildImageFromDockerfileAsync(stream, new ImageBuildParameters
-                {
-                    Dockerfile = "Dockerfile",
-                    Tags = new List<string> { imageName }
-                });
+                FromImage = imageName,
+                Tag = "latest"
+            };
+            try
+            {
+                await _dockerClient.Images.CreateImageAsync(imageCreateParameters, null, new Progress<JSONMessage>());
+                return RedirectToAction("Index");
             }
-
-            return RedirectToAction("Index");
+            catch (DockerApiException ex)
+            {
+                Console.WriteLine($"镜像创建失败: {ex.Message}");
+                return BadRequest("镜像创建失败");
+            }
         }
-
 
         //[HttpPost]
         //public async Task<IActionResult> CreateImage(string imageName)
