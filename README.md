@@ -12,8 +12,7 @@ ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
 
 
 ## 重启 Docker：
-systemctl daemon-reload
-systemctl restart docker 
+systemctl daemon-reload && systemctl restart docker 
 
 ## 查看是否成功监听
 $ netstat -lnpt|grep docker
@@ -25,8 +24,11 @@ $ firewall-cmd --reload
 ## 或者直接关闭防火墙
  
 临时关闭命令： systemctl stop firewalld
+
 永久关闭命令： systemctl disable firewalld
 
+## 查看IP
+ip addr
 ## 解决docker容器里网络请求慢的问题
 如果请求的是自己内网的api, 可以直接修改/etc/hosts文件，如果是外网的请求可以通过更改/etc/resolv.conf里的nameserver实现。
 
