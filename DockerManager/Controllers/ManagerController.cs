@@ -2,16 +2,19 @@
 using Docker.DotNet.Models;
 using DockerManager.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel;
 
 namespace DockerManager.Controllers
 {
     public class ManagerController : Controller
     {
+        private readonly IConfiguration _configuration;
         private readonly IDockerClient _dockerClient;
 
-        public ManagerController(IDockerClient dockerClient)
+        public ManagerController(IDockerClient dockerClient, IConfiguration configuration)
         {
             _dockerClient = dockerClient;
+            _configuration = configuration;
         }
 
         public async Task<IActionResult> Index()
@@ -19,7 +22,7 @@ namespace DockerManager.Controllers
             var containers = new List<ContainerViewModel>();
             var images = new List<ImageViewModel>();
 
-            #region 容器
+            #region 容器列表
 
             var response = await _dockerClient.Containers.ListContainersAsync(new ContainersListParameters { All = true });
             foreach (var container in response)
@@ -37,7 +40,7 @@ namespace DockerManager.Controllers
 
             #endregion 容器
 
-            #region 镜像
+            #region 镜像列表
 
             var responseListImages = await _dockerClient.Images.ListImagesAsync(new ImagesListParameters { All = true });
             foreach (var image in responseListImages)
@@ -50,36 +53,115 @@ namespace DockerManager.Controllers
             ViewBag.Containers = containers;
             ViewBag.Images = images;
 
+            //版本号
             var version = await _dockerClient.System.GetVersionAsync();
             ViewBag.Version = version.Version;
 
             return View();
         }
 
+        /// <summary>
+        /// Image Name: redis:latest
+        /// Container Name: myrediscontainer
+        /// Ports: 6379:6379
+        /// Volumes: redis_data:/data
+        ///
+        /// 镜像名称：nginx
+        //  容器名称：my-nginx-container
+        /// 端口映射：80:80
+        /// 其中端口映射的格式为：hostPort:containerPort，表示将主机上的80端口映射到容器的80端口。
+        /// 在提交表单时，端口映射的输入框应该填写"80:80"，多个端口映射之间使用分号";"隔开，
+        /// 例如"80:80;443:443"表示将主机上的80和443端口映射到容器的80和443端口。
+        /// await CreateContainer("nginx", "my-nginx", "80:80", "/var/www/html:/usr/share/nginx/html");
+        /// </summary>
+        /// <param name="imageName"></param>
+        /// <param name="containerName"></param>
+        /// <param name="ports"></param>
+        /// <param name="volumes"></param>
+        /// <returns></returns>
         [HttpPost]
-        public async Task<IActionResult> CreateContainer(string imageName, string containerName)
+        public async Task<IActionResult> CreateContainer(string imageName, string containerName, string ports, string volumes)
         {
-            var container = await _dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
+            var portBindings = new Dictionary<string, IList<PortBinding>>();
+            if (!string.IsNullOrEmpty(ports))
+            {
+                // Split the ports string into individual port mappings
+                var portMappings = ports.Split(';');
+                foreach (var portMapping in portMappings)
+                {
+                    // Split the individual port mapping into the host and container ports
+                    var portMappingParts = portMapping.Split(':');
+                    var hostPort = portMappingParts[0];
+                    var containerPort = portMappingParts[1];
+
+                    // Create a new port binding for this mapping
+                    var portBinding = new PortBinding
+                    {
+                        HostPort = hostPort
+                    };
+
+                    // Add the port binding to the dictionary for the container port
+                    if (!portBindings.ContainsKey(containerPort))
+                    {
+                        portBindings.Add(containerPort, new List<PortBinding>());
+                    }
+                    portBindings[containerPort].Add(portBinding);
+                }
+            }
+
+            var hostConfig = new HostConfig();
+
+            //卷挂载volumes不为空,则添加绑定
+            if (!string.IsNullOrEmpty(volumes))
+            {
+                hostConfig.Binds = new List<string> { volumes };
+            }
+
+            var createParameters = new CreateContainerParameters
             {
                 Image = imageName,
-                Name = containerName
-            });
+                Name = containerName,
+                HostConfig = hostConfig,
+                ExposedPorts = new Dictionary<string, EmptyStruct>()
+            };
+
+            if (portBindings.Count > 0)
+            {
+                // Add the exposed ports to the create parameters
+                //为了使端口绑定生效，我们需要将端口添加到 ExposedPorts 字典中。
+                //如果你不这样做，Docker 将无法将容器端口暴露给主机。
+                foreach (var port in portBindings.Keys)
+                {
+                    createParameters.ExposedPorts.Add(port, new EmptyStruct());
+                }
+
+                // Add the port bindings to the host config
+                hostConfig.PortBindings = portBindings;
+            }
+
+            var container = await _dockerClient.Containers.CreateContainerAsync(createParameters);
+
+            await _dockerClient.Containers.StartContainerAsync(container.ID, new ContainerStartParameters());
 
             return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> CreateRedisContainer()   //public async Task<string> CreateRedisContainer()
+        /// <summary>
+        /// 创建redis容器,测试用
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IActionResult> CreateRedisContainer()
         {
-            var dockerClient = new DockerClientConfiguration().CreateClient();
+            //var dockerClient = new DockerClientConfiguration(new Uri( _configuration.GetValue<string>("DockerApiUrl"))).CreateClient();
 
-            var containerConfig = new Config
-            {
-                Image = "redis:latest",
-                ExposedPorts = new Dictionary<string, EmptyStruct>
-                                {
-                                    { "6379/tcp", default }
-                                }
-            };
+            //var containerConfig = new Config
+            //{
+            //    Image = "redis:latest",
+            //    ExposedPorts = new Dictionary<string, EmptyStruct>
+            //                    {
+            //                        { "6379/tcp", default }
+            //                    }
+            //};
 
             var hostConfig = new HostConfig
             {
@@ -97,23 +179,57 @@ namespace DockerManager.Controllers
                                 }
             };
 
-            var containerCreateParameters = new CreateContainerParameters(containerConfig)
+            var containerCreateParameters = new CreateContainerParameters()
             {
-                Name = "my-redis-container",
-                //Config = containerConfig,
-                HostConfig = hostConfig
+                Image = "redis:latest",
+                Name = "myrediscontainer",
+                HostConfig = hostConfig,
+                //NetworkingConfig = new NetworkingConfig()
             };
 
-            var createdContainer = await dockerClient.Containers.CreateContainerAsync(containerCreateParameters);
+            //containerCreateParameters.HostConfig.PortBindings = new Dictionary<string, IList<PortBinding>>
+            //                                                    {
+            //                                                        {
+            //                                                            "6379/tcp",
+            //                                                            new List<PortBinding>
+            //                                                            {
+            //                                                                new PortBinding
+            //                                                                {
+            //                                                                    HostPort = "6379"
+            //                                                                }
+            //                                                            }
+            //                                                        }
+            //                                                    };
+
+            //containerCreateParameters.NetworkingConfig.EndpointsConfig = new Dictionary<string, EndpointSettings>
+            //                                                                {
+            //                                                                    {
+            //                                                                        "bridge",
+            //                                                                        new EndpointSettings
+            //                                                                        {
+            //                                                                            IPAMConfig = new EndpointIPAMConfig
+            //                                                                            {
+            //                                                                                IPv4Address = "172.17.0.2"
+            //                                                                            }
+            //                                                                        }
+            //                                                                    }
+            //                                                                };
+
+            var createdContainer = await _dockerClient.Containers.CreateContainerAsync(containerCreateParameters);
             var containerId = createdContainer.ID;
             //启动容器
-            await dockerClient.Containers.StartContainerAsync(containerId, null);
+            await _dockerClient.Containers.StartContainerAsync(containerId, null);
 
             //return containerId;
 
             return RedirectToAction("Index");
         }
 
+        /// <summary>
+        /// 删除容器
+        /// </summary>
+        /// <param name="containerId"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<IActionResult> DeleteContainer(string containerId)
         {
@@ -122,6 +238,11 @@ namespace DockerManager.Controllers
             return RedirectToAction("Index");
         }
 
+        /// <summary>
+        /// 创建公共仓库的镜像
+        /// </summary>
+        /// <param name="imageName"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<IActionResult> CreateImage(string imageName)
         {
@@ -168,6 +289,33 @@ namespace DockerManager.Controllers
             }
         }
 
+        /// <summary>
+        /// 删除镜像
+        /// </summary>
+        /// <param name="imageId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<IActionResult> DeleteImage(string imageId)
+        {
+            await _dockerClient.Images.DeleteImageAsync(imageId, new ImageDeleteParameters { Force = true });
+
+            return RedirectToAction("Index");
+        }
+
+        #region 废弃
+        //[HttpPost]
+        //public async Task<IActionResult> CreateContainer(string imageName, string containerName)
+        //{
+        //    var container = await _dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
+        //    {
+        //        Image = imageName,
+        //        Name = containerName
+        //    });
+
+        //    return RedirectToAction("Index");
+        //} 
+        #endregion
+        #region 废弃
         //[HttpPost]
         //public async Task<IActionResult> CreateImage(string imageName)
         //{
@@ -195,14 +343,8 @@ namespace DockerManager.Controllers
         //    }
 
         //    return RedirectToAction("Index");
-        //}
+        //} 
+        #endregion
 
-        [HttpPost]
-        public async Task<IActionResult> DeleteImage(string imageId)
-        {
-            await _dockerClient.Images.DeleteImageAsync(imageId, new ImageDeleteParameters { Force = true });
-
-            return RedirectToAction("Index");
-        }
     }
 }

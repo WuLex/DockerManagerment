@@ -51,8 +51,27 @@
                     <label for="containerName">Container Name:</label>
                     <input type="text" class="form-control" id="containerName" name="containerName" required />
                 </div>
+                <div class="form-group">
+                    <label for="ports">Ports:</label>
+                    <input type="text" class="form-control" id="ports" name="ports" />
+                </div>
+                <div class="form-group">
+                    <label for="volumes">Volumes:</label>
+                    <input type="text" class="form-control" id="volumes" name="volumes" />
+                </div>
                 <button type="submit" class="btn btn-primary m-1">Create</button>
             </form>
+          @*  <form method="post" asp-action="CreateContainer">
+                <div class="form-group">
+                    <label for="imageName">Image Name:</label>
+                    <input type="text" class="form-control" id="imageName" name="imageName" required />
+                </div>
+                <div class="form-group">
+                    <label for="containerName">Container Name:</label>
+                    <input type="text" class="form-control" id="containerName" name="containerName" required />
+                </div>
+                <button type="submit" class="btn btn-primary m-1">Create</button>
+            </form>*@
         </div>
         <br />
         <hr />

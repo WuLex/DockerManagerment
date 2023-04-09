@@ -1,19 +1,20 @@
 using Docker.DotNet;
+using Microsoft.Extensions.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var configuration = builder.Configuration;
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddSingleton<IDockerClient>(
-    //new DockerClientConfiguration(new Uri("unix:///var/run/docker.sock")).CreateClient()
-    new DockerClientConfiguration(new Uri("http://192.168.1.103:2375/")).CreateClient()
+//new DockerClientConfiguration(new Uri("unix:///var/run/docker.sock")).CreateClient()
+    new DockerClientConfiguration(new Uri(configuration.GetValue<string>("DockerApiUrl"))).CreateClient()
     );
 
 //var dockerClient = new DockerClientConfiguration().CreateClient();
 //builder.Services.AddSingleton(dockerClient);
-
-var configuration = builder.Configuration;
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.

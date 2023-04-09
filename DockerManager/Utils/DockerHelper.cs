@@ -10,14 +10,36 @@ namespace DockerManager.Utils
 {
     public static class DockerHelper
     {
+        private static readonly IConfiguration _configuration;
+        private static readonly DockerClient myClient;
+        private static readonly string dockerApiUrl=string.Empty;
 
-        public static readonly DockerClient myClient = new DockerClientConfiguration(new Uri("http://192.168.1.103:2375/")).CreateClient();
+        //public static readonly DockerClient myClient = new DockerClientConfiguration(new Uri("http://192.168.0.109:2375/")).CreateClient();
 
+        /// <summary>
+        /// 静态构造函数
+        /// </summary>
+        static DockerHelper()
+        {
+            // 加载配置文件
+            var builder = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
+                .AddEnvironmentVariables();
+
+            _configuration = builder.Build();
+
+            // 从配置文件中获取 DockerApiUrl
+            var dockerApiUrl = _configuration.GetValue<string>("DockerApiUrl");
+
+            // 创建 DockerClient 实例
+            myClient = new DockerClientConfiguration(new Uri(dockerApiUrl)).CreateClient();
+        }
 
         #region 方式一
         public static async Task<ContainerStatsResponse> GetContainerStats(string containerId)
         {
-            using (var client = new DockerClientConfiguration(new Uri("http://192.168.1.103:2375/")).CreateClient())
+            using (var client = new DockerClientConfiguration(new Uri(dockerApiUrl)).CreateClient())
             {
                 var parameters = new ContainerStatsParameters { Stream = false };
                 var progress = new ContainerStatsProgress();
@@ -79,7 +101,7 @@ namespace DockerManager.Utils
         {
             //var config = new DockerClientConfiguration(new Uri("npipe://./pipe/docker_engine"));
             //var config = new DockerClientConfiguration(new Uri("unix:///var/run/docker.sock")); 
-            var config = new DockerClientConfiguration(new Uri("http://192.168.1.103:2375/")); 
+            var config = new DockerClientConfiguration(new Uri(dockerApiUrl)); 
             using var client = config.CreateClient();
             var networks = (await client.Networks.ListNetworksAsync(new NetworksListParameters())).ToList();
             return  networks;
