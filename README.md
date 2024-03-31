@@ -263,6 +263,48 @@ docker常用运维命令总结：在centos中一般通过`systemd`启动与管�
 13. 删除所有容器：docker rm -f  `docker ps -a -q`
 14. 运行某一个容器：`docker run  -it -d -p 6379:6379  --name mx-redis  mx/redis:1.0`
 
+## 查看容器 IP 地址
+
+```bash
+# 通过容器名称或ID查看IP
+sudo docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' <container_name_or_id>
+
+# 例如，查看名为 "zookeeper" 的容器的IP地址
+sudo docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' zookeeper
+```
+
+## 查看容器日志
+
+```bash
+# 查看指定容器的实时日志
+sudo docker logs -f <container_name_or_id>
+
+# 例如，查看名为 "kafka" 的容器的实时日志
+sudo docker logs -f kafka
+
+# 查看指定容器的最近日志（最后几行）
+sudo docker logs <container_name_or_id>
+
+# 例如，查看名为 "zookeeper" 的容器的最近日志
+sudo docker logs zookeeper
+```
+
+## 使用 docker-compose 查看容器 IP 地址和日志
+
+```bash
+# 查看容器 IP 地址
+sudo docker-compose exec <service_name> hostname -i
+
+# 例如，查看名为 "zookeeper" 的服务的容器IP地址
+sudo docker-compose exec zookeeper hostname -i
+
+# 查看容器日志
+sudo docker-compose logs -f <service_name>
+
+# 例如，查看名为 "kafka" 的服务的实时日志
+sudo docker-compose logs -f kafka
+```
+
 # Docker Compose常用命令
 
 以下是 Docker Compose 常用命令：
