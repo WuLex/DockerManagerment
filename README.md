@@ -232,8 +232,28 @@ bzip2 -d -c < /home/save.tar.bz2 | docker load
 docker port a581df505cb9 22
 49153
 ```
+## docker批量管理容器
+docker中 启动所有的容器命令
+```bash
+docker start $(docker ps -a | awk '{ print $1}' | tail -n +2)
+```
+docker中 关闭所有的容器命令
+```bash
+docker stop $(docker ps -a | awk '{ print $1}' | tail -n +2)
+```
+docker中 删除所有的容器命令
 
-docker常用运维命令总结：在centos中一般通过`systemd`启动与管理`docker`：
+```bash
+docker rm $(docker ps -a | awk '{ print $1}' | tail -n +2)
+```
+docker中 删除所有的镜像
+```bash
+docker rmi $(docker images | awk '{print $3}' |tail -n +2)
+```
+
+## docker常用运维命令总结
+
+在centos中一般通过`systemd`启动与管理`docker`：
 
 1. 启动docker：`sudo systemctl start docker`
 
